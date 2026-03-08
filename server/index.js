@@ -8,6 +8,7 @@ const jwt      = require('jsonwebtoken');
 const supabase = require('./supabase');
 const authRoutes = require('./auth');
 const reactionRoutes = require('./reactions');
+const scoresRoutes = require('./scores');
 
 const app = express();
 const server = http.createServer(app);
@@ -22,6 +23,7 @@ app.use(express.json());
 // Auth routes — register, login, verify
 app.use('/api/auth', authRoutes);
 app.use('/api/reactions', reactionRoutes);
+app.use('/api/scores', scoresRoutes);
 
 // Load rooms from database
 async function getRooms() {

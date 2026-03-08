@@ -474,6 +474,150 @@ aside h3 {
   }
 }
 
+/* ── SCORES BAR ──────────────────────────────────────────────── */
+#scores-bar {
+  display: flex;
+  align-items: center;
+  background: #0a0c10;
+  border-bottom: 1px solid var(--border);
+  height: 48px;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+#scores-scroll {
+  flex: 1;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+}
+#scores-scroll::-webkit-scrollbar { display: none; }
+
+#games-container {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 12px;
+  height: 48px;
+  white-space: nowrap;
+}
+
+.scores-loading {
+  font-size: .72rem;
+  color: var(--muted);
+  font-style: italic;
+}
+
+.game-card {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 5px 10px;
+  cursor: pointer;
+  transition: border-color .2s, transform .1s;
+  flex-shrink: 0;
+}
+.game-card:hover {
+  border-color: var(--accent);
+  transform: translateY(-1px);
+}
+.game-card.live {
+  border-color: #f87171;
+}
+.game-card.live .game-status {
+  color: #f87171;
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0%,100% { opacity: 1; }
+  50%      { opacity: .4; }
+}
+
+.game-team {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+}
+
+.game-abbr {
+  font-size: .7rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.game-score {
+  font-size: .85rem;
+  font-weight: 700;
+  color: var(--accent);
+  font-family: 'Bebas Neue', sans-serif;
+  letter-spacing: .05em;
+}
+
+.game-middle {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.game-status {
+  font-size: .65rem;
+  color: var(--muted);
+  text-align: center;
+  white-space: nowrap;
+}
+
+.game-vs {
+  font-size: .7rem;
+  color: var(--muted);
+}
+
+/* ── STAT LEADERS ─────────────────────────────────────────────── */
+#stat-leaders {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  border-left: 1px solid var(--border);
+  padding: 0 12px;
+  height: 100%;
+  flex-shrink: 0;
+}
+
+.leader-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0 10px;
+  gap: 2px;
+}
+
+.leader-label {
+  font-size: .6rem;
+  color: var(--accent);
+  font-weight: 700;
+  letter-spacing: .08em;
+}
+
+.leader-value {
+  font-size: .72rem;
+  color: var(--text);
+  white-space: nowrap;
+  max-width: 100px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.leader-divider {
+  width: 1px;
+  height: 24px;
+  background: var(--border);
+}
+
 /* ── REACTIONS ───────────────────────────────────────────────── */
 .reaction-bar {
   display: flex;

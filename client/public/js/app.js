@@ -23,6 +23,10 @@ const connLabel     = document.getElementById("conn-label");
 const msgInput      = document.getElementById("msg-input");
 const sendBtn       = document.getElementById("send-btn");
 const usersToggle   = document.getElementById("users-toggle");
+const gamesContainer = document.getElementById("games-container");
+const leaderPts      = document.getElementById("leader-pts");
+const leaderAst      = document.getElementById("leader-ast");
+const leaderReb      = document.getElementById("leader-reb");
 const sidebar       = document.getElementById("sidebar");
 const loggedInUser  = document.getElementById("logged-in-user");
 const currentRoomTag = document.getElementById("current-room-tag");
@@ -130,6 +134,7 @@ function enterChat() {
   chatScreen.classList.remove("hidden");
   loggedInUser.textContent = currentUser.username;
   connectSocket();
+  startScoreUpdates();
 }
 
 // ── SOCKET CONNECTION ─────────────────────────────────────────
@@ -472,3 +477,77 @@ window.addEventListener("load", async () => {
     localStorage.removeItem("hoopstalk_token");
   }
 });
+// ── NBA SCORES ────────────────────────────────────────────────
+
+async function loadScores() {
+  try {
+    const res  = await fetch("/api/scores/today");
+    const data = await res.json();
+
+    if (!data.games || data.games.length === 0) {
+      gamesContainer.innerHTML = `
+        <span class="scores-loading">No games scheduled today</span>
+      `;
+      return;
+    }
+
+    gamesContainer.innerHTML = "";
+
+    data.games.forEach(game => {
+      const isLive  = game.status !== 'Final' && game.period > 0;
+      const isFinal = game.status === 'Final';
+
+      // Format status text
+      let statusText = game.status;
+      if (isLive) statusText = `Q${game.period} ${game.time || ''}`;
+      if (isFinal) statusText = 'Final';
+
+      const card = document.createElement("div");
+      card.className = `game-card${isLive ? " live" : ""}`;
+      card.innerHTML = `
+        <div class="game-team">
+          <span class="game-abbr">${game.away_team.abbr}</span>
+          <span class="game-score">${game.away_team.score || 0}</span>
+        </div>
+        <div class="game-middle">
+          <span class="game-status">${statusText}</span>
+          <span class="game-vs">@</span>
+        </div>
+        <div class="game-team">
+          <span class="game-abbr">${game.home_team.abbr}</span>
+          <span class="game-score">${game.home_team.score || 0}</span>
+        </div>
+      `;
+
+      // Click to jump to #nba room
+      card.addEventListener("click", () => {
+        const nbaRoom = [...document.querySelectorAll(".room-item")]
+          .find(el => el.textContent.trim() === "#nba" || 
+                      el.textContent.includes("nba"));
+        if (nbaRoom) nbaRoom.click();
+      });
+
+      gamesContainer.appendChild(card);
+    });
+
+  } catch (err) {
+    console.error('Scores error:', err);
+    gamesContainer.innerHTML = `
+      <span class="scores-loading">Could not load scores</span>
+    `;
+  }
+}
+
+async function loadLeaders() {
+  leaderPts.querySelector(".leader-value").textContent = "Soon";
+  leaderAst.querySelector(".leader-value").textContent = "Soon";
+  leaderReb.querySelector(".leader-value").textContent = "Soon";
+}
+
+// Load scores when chat opens and refresh every 60 seconds
+function startScoreUpdates() {
+  loadScores();
+  loadLeaders();
+  setInterval(loadScores,  60000);
+  setInterval(loadLeaders, 60000);
+}
