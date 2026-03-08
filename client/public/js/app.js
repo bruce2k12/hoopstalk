@@ -1,54 +1,148 @@
-let socket      = null;
-let myUsername  = "";
-let typingTimer = null;
-let isTyping    = false;
-let lastAuthor  = "";
+// ============================================================
+// client/public/js/app.js — HoopsTalk Phase 2
+// ============================================================
 
-const joinScreen    = document.getElementById("join-screen");
+// ── STATE ────────────────────────────────────────────────────
+let socket       = null;
+let currentUser  = null;
+let currentRoom  = null;
+let typingTimer  = null;
+let isTyping     = false;
+let lastAuthor   = "";
+
+// ── DOM REFERENCES ───────────────────────────────────────────
+const authScreen    = document.getElementById("auth-screen");
 const chatScreen    = document.getElementById("chat-screen");
-const usernameInput = document.getElementById("username-input");
-const joinBtn       = document.getElementById("join-btn");
-const msgInput      = document.getElementById("msg-input");
-const sendBtn       = document.getElementById("send-btn");
 const messagesEl    = document.getElementById("messages");
 const userListEl    = document.getElementById("user-list");
+const roomListEl    = document.getElementById("room-list");
 const userCountEl   = document.getElementById("user-count");
 const typingBar     = document.getElementById("typing-bar");
 const connDot       = document.getElementById("conn-dot");
 const connLabel     = document.getElementById("conn-label");
+const msgInput      = document.getElementById("msg-input");
+const sendBtn       = document.getElementById("send-btn");
 const usersToggle   = document.getElementById("users-toggle");
 const sidebar       = document.getElementById("sidebar");
+const loggedInUser  = document.getElementById("logged-in-user");
+const currentRoomTag = document.getElementById("current-room-tag");
 
-usernameInput.addEventListener("keydown", (e) => {
-  if (e.key === "Enter") joinChat();
-});
+// ── TAB SWITCHING ─────────────────────────────────────────────
+function switchTab(tab) {
+  const loginForm    = document.getElementById("login-form");
+  const registerForm = document.getElementById("register-form");
+  const loginTab     = document.getElementById("login-tab");
+  const registerTab  = document.getElementById("register-tab");
 
-joinBtn.addEventListener("click", joinChat);
+  if (tab === "login") {
+    loginForm.classList.remove("hidden");
+    registerForm.classList.add("hidden");
+    loginTab.classList.add("active");
+    registerTab.classList.remove("active");
+  } else {
+    loginForm.classList.add("hidden");
+    registerForm.classList.remove("hidden");
+    loginTab.classList.remove("active");
+    registerTab.classList.add("active");
+  }
+}
 
-function joinChat() {
-  const name = usernameInput.value.trim();
-  if (!name) {
-    usernameInput.style.borderColor = "#f87171";
-    setTimeout(() => usernameInput.style.borderColor = "", 1000);
+// ── AUTH: REGISTER ────────────────────────────────────────────
+async function handleRegister() {
+  const username   = document.getElementById("reg-username").value.trim();
+  const pin        = document.getElementById("reg-pin").value.trim();
+  const pinConfirm = document.getElementById("reg-pin-confirm").value.trim();
+  const errorEl    = document.getElementById("register-error");
+
+  errorEl.textContent = "";
+
+  if (pin !== pinConfirm) {
+    errorEl.textContent = "PINs do not match";
     return;
   }
 
-  myUsername = name;
+  try {
+    const res  = await fetch("/api/auth/register", {
+      method:  "POST",
+      headers: { "Content-Type": "application/json" },
+      body:    JSON.stringify({ username, pin }),
+    });
+    const data = await res.json();
 
-  joinScreen.classList.add("hidden");
+    if (!res.ok) {
+      errorEl.textContent = data.error;
+      return;
+    }
+
+    // Save token and connect
+    localStorage.setItem("hoopstalk_token", data.token);
+    currentUser = data.user;
+    enterChat();
+
+  } catch (err) {
+    errorEl.textContent = "Something went wrong, try again";
+  }
+}
+
+// ── AUTH: LOGIN ───────────────────────────────────────────────
+async function handleLogin() {
+  const username = document.getElementById("login-username").value.trim();
+  const pin      = document.getElementById("login-pin").value.trim();
+  const errorEl  = document.getElementById("login-error");
+
+  errorEl.textContent = "";
+
+  try {
+    const res  = await fetch("/api/auth/login", {
+      method:  "POST",
+      headers: { "Content-Type": "application/json" },
+      body:    JSON.stringify({ username, pin }),
+    });
+    const data = await res.json();
+
+    if (!res.ok) {
+      errorEl.textContent = data.error;
+      return;
+    }
+
+    localStorage.setItem("hoopstalk_token", data.token);
+    currentUser = data.user;
+    enterChat();
+
+  } catch (err) {
+    errorEl.textContent = "Something went wrong, try again";
+  }
+}
+
+// ── AUTH: LOGOUT ──────────────────────────────────────────────
+function handleLogout() {
+  localStorage.removeItem("hoopstalk_token");
+  currentUser = null;
+  currentRoom = null;
+  if (socket) socket.disconnect();
+  authScreen.classList.remove("hidden");
+  chatScreen.classList.add("hidden");
+}
+
+// ── ENTER CHAT ────────────────────────────────────────────────
+function enterChat() {
+  authScreen.classList.add("hidden");
   chatScreen.classList.remove("hidden");
-
+  loggedInUser.textContent = currentUser.username;
   connectSocket();
 }
 
+// ── SOCKET CONNECTION ─────────────────────────────────────────
 function connectSocket() {
   socket = io();
 
   socket.on("connect", () => {
-    console.log("✅ Connected to server:", socket.id);
+    console.log("✅ Connected:", socket.id);
     setConnectionStatus(true);
 
-    socket.emit("user:join", myUsername);
+    // Authenticate socket with JWT token
+    const token = localStorage.getItem("hoopstalk_token");
+    socket.emit("auth", token);
 
     msgInput.disabled = false;
     sendBtn.disabled  = false;
@@ -56,35 +150,53 @@ function connectSocket() {
   });
 
   socket.on("disconnect", () => {
-    console.log("❌ Disconnected from server");
     setConnectionStatus(false);
     msgInput.disabled = true;
     sendBtn.disabled  = true;
   });
 
-  socket.on("message:history", (history) => {
+  socket.on("auth:error", (msg) => {
+    console.error("Auth error:", msg);
+    handleLogout();
+  });
+
+  // Rooms list from server
+  socket.on("rooms:list", (rooms) => {
+    renderRoomList(rooms);
+    // Auto join first room
+    if (rooms.length > 0 && !currentRoom) {
+      joinRoom(rooms[0]);
+    }
+  });
+
+  // Message history for current room
+  socket.on("message:history", (messages) => {
     messagesEl.innerHTML = "";
     lastAuthor = "";
-    history.forEach(msg => renderMessage(msg));
+    messages.forEach(msg => renderMessage(msg));
     scrollToBottom();
   });
 
+  // New message received
   socket.on("message:receive", (msg) => {
+    if (msg.room_id !== currentRoom?.id) return;
     renderMessage(msg);
     scrollToBottom();
   });
 
+  // System message
   socket.on("message:system", (data) => {
     renderSystemMessage(data.text);
     scrollToBottom();
   });
 
+  // Users list
   socket.on("users:list", (users) => {
     renderUserList(users);
   });
 
+  // Typing indicator
   const typingUsers = new Set();
-
   socket.on("typing:update", ({ username, isTyping: theyAreTyping }) => {
     if (theyAreTyping) {
       typingUsers.add(username);
@@ -95,11 +207,31 @@ function connectSocket() {
   });
 }
 
+// ── JOIN A ROOM ───────────────────────────────────────────────
+function joinRoom(room) {
+  currentRoom = room;
+  currentRoomTag.textContent = `#${room.name}`;
+  messagesEl.innerHTML = "";
+  lastAuthor = "";
+
+  // Tell server we want this room's history
+  socket.emit("room:join", room.id);
+
+  // Update active room in sidebar
+  document.querySelectorAll(".room-item").forEach(el => {
+    el.classList.toggle("active", parseInt(el.dataset.id) === room.id);
+  });
+}
+
+// ── SEND MESSAGE ──────────────────────────────────────────────
 function sendMessage() {
   const text = msgInput.value.trim();
-  if (!text || !socket) return;
+  if (!text || !socket || !currentRoom) return;
 
-  socket.emit("message:send", { text });
+  socket.emit("message:send", {
+    text,
+    room_id: currentRoom.id
+  });
 
   msgInput.value = "";
   stopTyping();
@@ -108,15 +240,24 @@ function sendMessage() {
 msgInput.addEventListener("keydown", (e) => {
   if (e.key === "Enter") sendMessage();
 });
-
 sendBtn.addEventListener("click", sendMessage);
 
+// Enter key on auth forms
+document.addEventListener("keydown", (e) => {
+  if (e.key !== "Enter") return;
+  if (!document.getElementById("login-form").classList.contains("hidden")) {
+    handleLogin();
+  } else if (!document.getElementById("register-form").classList.contains("hidden")) {
+    handleRegister();
+  }
+});
+
+// ── TYPING ────────────────────────────────────────────────────
 msgInput.addEventListener("input", () => {
   if (!isTyping) {
     isTyping = true;
-    socket.emit("typing:start");
+    socket?.emit("typing:start");
   }
-
   clearTimeout(typingTimer);
   typingTimer = setTimeout(stopTyping, 2000);
 });
@@ -129,19 +270,31 @@ function stopTyping() {
   clearTimeout(typingTimer);
 }
 
+// ── RENDER: ROOMS ─────────────────────────────────────────────
+function renderRoomList(rooms) {
+  roomListEl.innerHTML = "";
+  rooms.forEach(room => {
+    const li = document.createElement("li");
+    li.className = "room-item";
+    li.dataset.id = room.id;
+    li.innerHTML = `<span class="room-hash">#</span>${room.name}`;
+    li.onclick = () => joinRoom(room);
+    roomListEl.appendChild(li);
+  });
+}
+
+// ── RENDER: MESSAGES ──────────────────────────────────────────
 function renderMessage(msg) {
-  const isMine     = msg.author === myUsername;
+  const isMine     = msg.author === currentUser?.username;
   const isSameUser = msg.author === lastAuthor;
   lastAuthor       = msg.author;
 
   const time = new Date(msg.ts).toLocaleTimeString([], {
-    hour:   "2-digit",
-    minute: "2-digit",
+    hour: "2-digit", minute: "2-digit"
   });
 
   const div = document.createElement("div");
   div.className = `msg${isSameUser ? " continued" : ""}`;
-
   div.innerHTML = `
     <div class="msg-header">
       <span class="msg-author" style="color: ${isMine ? "#f7941d" : msg.color}">
@@ -151,10 +304,10 @@ function renderMessage(msg) {
     </div>
     <div class="bubble">${escapeHtml(msg.text)}</div>
   `;
-
   messagesEl.appendChild(div);
 }
 
+// ── RENDER: SYSTEM MESSAGE ────────────────────────────────────
 function renderSystemMessage(text) {
   lastAuthor = "";
   const div = document.createElement("div");
@@ -163,36 +316,36 @@ function renderSystemMessage(text) {
   messagesEl.appendChild(div);
 }
 
+// ── RENDER: USER LIST ─────────────────────────────────────────
 function renderUserList(users) {
   userCountEl.textContent = users.length;
   userListEl.innerHTML = "";
-
   users.forEach(user => {
     const li = document.createElement("li");
     li.innerHTML = `
       <span class="user-dot" style="background:${user.color}"></span>
       <span class="user-name-label">${escapeHtml(user.username)}</span>
-      ${user.username === myUsername ? '<span class="user-you-tag">you</span>' : ""}
+      ${user.username === currentUser?.username ? '<span class="user-you-tag">you</span>' : ""}
     `;
     userListEl.appendChild(li);
   });
 }
 
+// ── RENDER: TYPING BAR ────────────────────────────────────────
 function renderTypingBar(typingUsers) {
   if (typingUsers.size === 0) {
     typingBar.innerHTML = "";
     return;
   }
-
   const names  = [...typingUsers].join(", ");
   const plural = typingUsers.size > 1 ? "are" : "is";
-
   typingBar.innerHTML = `
     <div class="typing-dots"><span></span><span></span><span></span></div>
     <span>${escapeHtml(names)} ${plural} typing...</span>
   `;
 }
 
+// ── HELPERS ───────────────────────────────────────────────────
 function scrollToBottom() {
   messagesEl.scrollTop = messagesEl.scrollHeight;
 }
@@ -212,4 +365,26 @@ function escapeHtml(str) {
 
 usersToggle.addEventListener("click", () => {
   sidebar.classList.toggle("open");
+});
+
+// ── AUTO LOGIN: check for saved token on page load ────────────
+window.addEventListener("load", async () => {
+  const token = localStorage.getItem("hoopstalk_token");
+  if (!token) return;
+
+  try {
+    const res  = await fetch("/api/auth/verify", {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    const data = await res.json();
+
+    if (res.ok) {
+      currentUser = data.user;
+      enterChat();
+    } else {
+      localStorage.removeItem("hoopstalk_token");
+    }
+  } catch (err) {
+    localStorage.removeItem("hoopstalk_token");
+  }
 });

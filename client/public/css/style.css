@@ -27,7 +27,8 @@ body {
 
 .hidden { display: none !important; }
 
-#join-screen {
+/* ── AUTH SCREEN ────────────────────────────────────────────── */
+#auth-screen {
   height: 100vh;
   display: flex;
   align-items: center;
@@ -35,7 +36,7 @@ body {
   background: radial-gradient(ellipse at 50% 30%, #1a1200 0%, var(--bg) 70%);
 }
 
-.join-card {
+.auth-card {
   background: var(--panel);
   border: 1px solid var(--border);
   border-radius: 20px;
@@ -43,8 +44,8 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 16px;
-  width: 360px;
+  gap: 14px;
+  width: 380px;
   box-shadow: 0 24px 80px rgba(0,0,0,.5);
 }
 
@@ -57,20 +58,59 @@ body {
   50%      { transform: rotate(8deg); }
 }
 
-.join-card h1 {
+.auth-card h1 {
   font-family: 'Bebas Neue', sans-serif;
   font-size: 2.8rem;
   letter-spacing: .08em;
   color: var(--accent);
 }
 
-.join-card p {
+.auth-card p {
   font-size: .85rem;
   color: var(--muted);
-  text-align: center;
 }
 
-.join-card input {
+/* ── AUTH TABS ───────────────────────────────────────────────── */
+.auth-tabs {
+  display: flex;
+  width: 100%;
+  background: var(--input-bg);
+  border-radius: 10px;
+  padding: 4px;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+.auth-tab {
+  flex: 1;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  color: var(--muted);
+  font-family: 'Inter', sans-serif;
+  font-size: .85rem;
+  font-weight: 600;
+  padding: 8px;
+  cursor: pointer;
+  transition: background .2s, color .2s;
+}
+
+.auth-tab.active {
+  background: var(--accent);
+  color: #0f1117;
+}
+
+/* ── AUTH FORMS ──────────────────────────────────────────────── */
+#login-form,
+#register-form {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+#login-form input,
+#register-form input {
   width: 100%;
   background: var(--input-bg);
   border: 1px solid var(--border);
@@ -81,11 +121,13 @@ body {
   padding: 12px 16px;
   outline: none;
   transition: border-color .2s;
-  margin-top: 8px;
 }
-.join-card input:focus { border-color: var(--accent); }
 
-.join-card button {
+#login-form input:focus,
+#register-form input:focus { border-color: var(--accent); }
+
+#login-btn,
+#register-btn {
   width: 100%;
   background: var(--accent);
   color: #0f1117;
@@ -97,16 +139,30 @@ body {
   padding: 13px;
   cursor: pointer;
   transition: opacity .2s, transform .1s;
+  margin-top: 4px;
 }
-.join-card button:hover   { opacity: .88; }
-.join-card button:active  { transform: scale(.97); }
 
+#login-btn:hover,
+#register-btn:hover { opacity: .88; }
+
+#login-btn:active,
+#register-btn:active { transform: scale(.97); }
+
+.auth-error {
+  font-size: .8rem;
+  color: #f87171;
+  text-align: center;
+  min-height: 20px;
+}
+
+/* ── CHAT SCREEN ─────────────────────────────────────────────── */
 #chat-screen {
   display: flex;
   flex-direction: column;
   height: 100vh;
 }
 
+/* ── HEADER ──────────────────────────────────────────────────── */
 header {
   height: var(--header-h);
   display: flex;
@@ -152,6 +208,24 @@ header {
 
 .connection-label { font-size: .75rem; color: var(--muted); }
 
+.logged-in-user {
+  font-size: .8rem;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.logout-btn {
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--muted);
+  font-size: .75rem;
+  padding: 5px 10px;
+  cursor: pointer;
+  transition: border-color .2s, color .2s;
+}
+.logout-btn:hover { border-color: #f87171; color: #f87171; }
+
 .users-toggle {
   background: var(--input-bg);
   border: 1px solid var(--border);
@@ -164,31 +238,67 @@ header {
 }
 .users-toggle:hover { border-color: var(--accent); }
 
+/* ── CHAT BODY ───────────────────────────────────────────────── */
 .chat-body {
   display: flex;
   flex: 1;
   overflow: hidden;
 }
 
+/* ── SIDEBAR ─────────────────────────────────────────────────── */
 aside {
   width: var(--sidebar-w);
   flex-shrink: 0;
   background: var(--panel);
   border-right: 1px solid var(--border);
-  padding: 16px 12px;
+  padding: 12px;
   overflow-y: auto;
-  transition: transform .3s;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
+
+.sidebar-section { margin-bottom: 8px; }
 
 aside h3 {
   font-size: .65rem;
   text-transform: uppercase;
   letter-spacing: .12em;
   color: var(--muted);
-  margin-bottom: 12px;
+  margin-bottom: 8px;
   padding-left: 4px;
 }
 
+/* ── ROOM LIST ───────────────────────────────────────────────── */
+#room-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.room-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 8px;
+  border-radius: 8px;
+  font-size: .85rem;
+  cursor: pointer;
+  color: var(--muted);
+  transition: background .15s, color .15s;
+}
+.room-item:hover { background: var(--input-bg); color: var(--text); }
+.room-item.active { background: var(--input-bg); color: var(--accent); font-weight: 600; }
+
+.room-hash {
+  color: var(--muted);
+  font-weight: 700;
+  font-size: .9rem;
+}
+.room-item.active .room-hash { color: var(--accent); }
+
+/* ── USER LIST ───────────────────────────────────────────────── */
 #user-list {
   list-style: none;
   display: flex;
@@ -212,7 +322,6 @@ aside h3 {
   border-radius: 50%;
   flex-shrink: 0;
 }
-
 .user-name-label { font-weight: 500; }
 .user-you-tag {
   font-size: .65rem;
@@ -220,6 +329,7 @@ aside h3 {
   margin-left: auto;
 }
 
+/* ── CHAT MAIN ───────────────────────────────────────────────── */
 .chat-main {
   flex: 1;
   display: flex;
@@ -227,6 +337,7 @@ aside h3 {
   overflow: hidden;
 }
 
+/* ── MESSAGES ────────────────────────────────────────────────── */
 #messages {
   flex: 1;
   overflow-y: auto;
@@ -245,7 +356,6 @@ aside h3 {
   padding: 4px 8px;
   border-radius: 8px;
   transition: background .1s;
-  max-width: 100%;
 }
 .msg:hover { background: rgba(255,255,255,.03); }
 
@@ -261,15 +371,8 @@ aside h3 {
   margin-top: 10px;
 }
 
-.msg-author {
-  font-size: .85rem;
-  font-weight: 700;
-}
-
-.msg-time {
-  font-size: .68rem;
-  color: var(--muted);
-}
+.msg-author { font-size: .85rem; font-weight: 700; }
+.msg-time   { font-size: .68rem; color: var(--muted); }
 
 .bubble {
   font-size: .9rem;
@@ -290,6 +393,7 @@ aside h3 {
   font-style: italic;
 }
 
+/* ── TYPING BAR ──────────────────────────────────────────────── */
 #typing-bar {
   height: 24px;
   padding: 0 28px;
@@ -310,8 +414,12 @@ aside h3 {
 }
 .typing-dots span:nth-child(2) { animation-delay: .15s; }
 .typing-dots span:nth-child(3) { animation-delay: .3s; }
-@keyframes tdot { 0%,80%,100%{opacity:.3;transform:translateY(0)} 40%{opacity:1;transform:translateY(-3px)} }
+@keyframes tdot {
+  0%,80%,100% { opacity:.3; transform:translateY(0); }
+  40%         { opacity:1;  transform:translateY(-3px); }
+}
 
+/* ── INPUT AREA ──────────────────────────────────────────────── */
 .input-area {
   display: flex;
   gap: 10px;
@@ -332,7 +440,7 @@ aside h3 {
   outline: none;
   transition: border-color .2s;
 }
-#msg-input:focus   { border-color: var(--accent); }
+#msg-input:focus    { border-color: var(--accent); }
 #msg-input:disabled { opacity: .4; cursor: not-allowed; }
 
 #send-btn {
@@ -352,7 +460,16 @@ aside h3 {
 #send-btn:active   { transform: scale(.96); }
 #send-btn:disabled { opacity: .3; cursor: not-allowed; }
 
+/* ── RESPONSIVE ──────────────────────────────────────────────── */
 @media (max-width: 600px) {
   aside { display: none; }
-  aside.open { display: block; position: fixed; top: var(--header-h); bottom: 0; left: 0; z-index: 20; }
+  aside.open {
+    display: flex;
+    position: fixed;
+    top: var(--header-h);
+    bottom: 0;
+    left: 0;
+    z-index: 20;
+    width: var(--sidebar-w);
+  }
 }

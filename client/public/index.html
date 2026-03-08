@@ -10,50 +10,86 @@
 </head>
 <body>
 
-  <div id="join-screen">
-    <div class="join-card">
+  <!-- ═══════════════════════════════════════════
+       AUTH SCREEN — login or register
+  ════════════════════════════════════════════ -->
+  <div id="auth-screen">
+    <div class="auth-card">
       <div class="join-logo">🏀</div>
       <h1>HoopsTalk</h1>
       <p>Real-time chat for basketball fans</p>
-      <input
-        id="username-input"
-        type="text"
-        placeholder="Enter your name to join..."
-        maxlength="20"
-        autocomplete="off"
-      />
-      <button id="join-btn">Join the Chat</button>
+
+      <!-- TABS -->
+      <div class="auth-tabs">
+        <button class="auth-tab active" id="login-tab" onclick="switchTab('login')">Login</button>
+        <button class="auth-tab" id="register-tab" onclick="switchTab('register')">Register</button>
+      </div>
+
+      <!-- LOGIN FORM -->
+      <div id="login-form">
+        <input id="login-username" type="text" placeholder="Username" maxlength="20" autocomplete="off"/>
+        <input id="login-pin" type="password" placeholder="4-digit PIN" maxlength="4"/>
+        <button id="login-btn" onclick="handleLogin()">Login</button>
+        <div class="auth-error" id="login-error"></div>
+      </div>
+
+      <!-- REGISTER FORM -->
+      <div id="register-form" class="hidden">
+        <input id="reg-username" type="text" placeholder="Choose a username" maxlength="20" autocomplete="off"/>
+        <input id="reg-pin" type="password" placeholder="Choose a 4-digit PIN" maxlength="4"/>
+        <input id="reg-pin-confirm" type="password" placeholder="Confirm PIN" maxlength="4"/>
+        <button id="register-btn" onclick="handleRegister()">Create Account</button>
+        <div class="auth-error" id="register-error"></div>
+      </div>
+
     </div>
   </div>
 
+  <!-- ═══════════════════════════════════════════
+       CHAT SCREEN — shown after login
+  ════════════════════════════════════════════ -->
   <div id="chat-screen" class="hidden">
 
+    <!-- TOP BAR -->
     <header>
       <div class="header-left">
         <span class="logo">🏀</span>
         <span class="app-name">HoopsTalk</span>
-        <span class="room-tag">#general</span>
+        <span class="room-tag" id="current-room-tag">#general</span>
       </div>
       <div class="header-right">
         <div class="connection-dot" id="conn-dot"></div>
         <span class="connection-label" id="conn-label">Connected</span>
+        <span class="logged-in-user" id="logged-in-user"></span>
+        <button class="logout-btn" onclick="handleLogout()">Logout</button>
         <button class="users-toggle" id="users-toggle">👥 <span id="user-count">0</span></button>
       </div>
     </header>
 
+    <!-- BODY -->
     <div class="chat-body">
 
+      <!-- LEFT SIDEBAR: rooms + users -->
       <aside id="sidebar">
-        <h3>Online Now</h3>
-        <ul id="user-list"></ul>
+
+        <!-- ROOMS -->
+        <div class="sidebar-section">
+          <h3>Rooms</h3>
+          <ul id="room-list"></ul>
+        </div>
+
+        <!-- ONLINE USERS -->
+        <div class="sidebar-section">
+          <h3>Online Now</h3>
+          <ul id="user-list"></ul>
+        </div>
+
       </aside>
 
+      <!-- MAIN CHAT -->
       <div class="chat-main">
-
         <div id="messages"></div>
-
         <div id="typing-bar"></div>
-
         <div class="input-area">
           <input
             id="msg-input"
@@ -65,11 +101,9 @@
           />
           <button id="send-btn" disabled>Send</button>
         </div>
-
       </div>
 
     </div>
-
   </div>
 
 </body>
