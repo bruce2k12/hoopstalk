@@ -205,6 +205,11 @@ function connectSocket() {
     }
     renderTypingBar(typingUsers);
   });
+  
+  // Reaction updates from other users
+  socket.on("reaction:update", ({ messageId }) => {
+    loadReactions(messageId);
+  });
 }
 
 // ── JOIN A ROOM ───────────────────────────────────────────────
@@ -295,6 +300,7 @@ function renderMessage(msg) {
 
   const div = document.createElement("div");
   div.className = `msg${isSameUser ? " continued" : ""}`;
+  div.dataset.id = msg.id;
   div.innerHTML = `
     <div class="msg-header">
       <span class="msg-author" style="color: ${isMine ? "#f7941d" : msg.color}">
@@ -303,8 +309,86 @@ function renderMessage(msg) {
       <span class="msg-time">${time}</span>
     </div>
     <div class="bubble">${escapeHtml(msg.text)}</div>
+    <div class="reaction-bar">
+      <div class="reaction-picker hidden">
+        <span class="reaction-btn" onclick="toggleReaction('${msg.id}', '🔥')">🔥</span>
+        <span class="reaction-btn" onclick="toggleReaction('${msg.id}', '🏀')">🏀</span>
+        <span class="reaction-btn" onclick="toggleReaction('${msg.id}', '😂')">😂</span>
+        <span class="reaction-btn" onclick="toggleReaction('${msg.id}', '💯')">💯</span>
+        <span class="reaction-btn" onclick="toggleReaction('${msg.id}', '😤')">😤</span>
+        <span class="reaction-btn" onclick="toggleReaction('${msg.id}', '🐐')">🐐</span>
+      </div>
+      <div class="reaction-counts" id="counts-${msg.id}"></div>
+    </div>
   `;
+
+  // Show/hide reaction picker on hover
+  div.addEventListener("mouseenter", () => {
+    div.querySelector(".reaction-picker").classList.remove("hidden");
+  });
+  div.addEventListener("mouseleave", () => {
+    div.querySelector(".reaction-picker").classList.add("hidden");
+  });
+
   messagesEl.appendChild(div);
+
+  // Load existing reactions for this message
+  loadReactions(msg.id);
+}
+
+// ── LOAD REACTIONS ────────────────────────────────────────────
+async function loadReactions(messageId) {
+  try {
+    const res  = await fetch(`/api/reactions/${messageId}`);
+    const data = await res.json();
+    renderReactionCounts(messageId, data);
+  } catch (err) {
+    console.error('Load reactions error:', err);
+  }
+}
+
+// ── TOGGLE REACTION ───────────────────────────────────────────
+async function toggleReaction(messageId, emoji) {
+  const token = localStorage.getItem("hoopstalk_token");
+
+  try {
+    const res  = await fetch("/api/reactions/toggle", {
+      method:  "POST",
+      headers: {
+        "Content-Type":  "application/json",
+        "Authorization": `Bearer ${token}`
+      },
+      body: JSON.stringify({ message_id: messageId, emoji })
+    });
+
+    if (res.ok) {
+      // Reload reactions after toggle
+      loadReactions(messageId);
+
+      // Tell everyone else via socket to refresh reactions
+      socket.emit("reaction:update", { messageId });
+    }
+
+  } catch (err) {
+    console.error('Toggle reaction error:', err);
+  }
+}
+
+// ── RENDER REACTION COUNTS ────────────────────────────────────
+function renderReactionCounts(messageId, reactions) {
+  const el = document.getElementById(`counts-${messageId}`);
+  if (!el) return;
+
+  el.innerHTML = "";
+
+  Object.entries(reactions).forEach(([emoji, data]) => {
+    const hasReacted = data.users.includes(currentUser?.id);
+    const span = document.createElement("span");
+    span.className = `reaction-count${hasReacted ? " reacted" : ""}`;
+    span.textContent = `${emoji} ${data.count}`;
+    span.onclick = () => toggleReaction(messageId, emoji);
+    el.appendChild(span);
+  });
 }
 
 // ── RENDER: SYSTEM MESSAGE ────────────────────────────────────

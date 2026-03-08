@@ -7,6 +7,7 @@ const bcrypt   = require('bcrypt');
 const jwt      = require('jsonwebtoken');
 const supabase = require('./supabase');
 const authRoutes = require('./auth');
+const reactionRoutes = require('./reactions');
 
 const app = express();
 const server = http.createServer(app);
@@ -20,6 +21,7 @@ app.use(express.json());
 
 // Auth routes — register, login, verify
 app.use('/api/auth', authRoutes);
+app.use('/api/reactions', reactionRoutes);
 
 // Load rooms from database
 async function getRooms() {
@@ -185,6 +187,11 @@ io.on("connection", (socket) => {
     const user = activeUsers[socket.id];
     if (!user) return;
     socket.broadcast.emit("typing:update", { username: user.username, isTyping: false });
+  });
+
+  // Broadcast reaction updates to everyone
+  socket.on("reaction:update", (data) => {
+    socket.broadcast.emit("reaction:update", data);
   });
 
   socket.on("disconnect", () => {

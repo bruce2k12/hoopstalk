@@ -473,3 +473,74 @@ aside h3 {
     width: var(--sidebar-w);
   }
 }
+
+/* ── REACTIONS ───────────────────────────────────────────────── */
+.reaction-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 2px;
+}
+
+.reaction-picker {
+  display: flex;
+  gap: 4px;
+  padding: 4px 6px;
+  background: var(--input-bg);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  width: fit-content;
+  opacity: 0;
+  transform: translateY(-4px);
+  transition: opacity .15s, transform .15s;
+}
+
+.reaction-picker:not(.hidden) {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.reaction-btn {
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 6px;
+  transition: transform .1s, background .1s;
+  user-select: none;
+}
+
+.reaction-btn:hover {
+  transform: scale(1.3);
+  background: var(--border);
+}
+
+.reaction-counts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  min-height: 4px;
+}
+
+.reaction-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: .78rem;
+  background: var(--input-bg);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 2px 8px;
+  cursor: pointer;
+  transition: background .15s, border-color .15s;
+  user-select: none;
+}
+
+.reaction-count:hover {
+  background: var(--border);
+}
+
+.reaction-count.reacted {
+  background: rgba(247, 148, 29, 0.15);
+  border-color: var(--accent);
+  color: var(--accent);
+}
