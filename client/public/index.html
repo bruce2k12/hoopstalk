@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>HoopsTalk 🏀</title>
+  <link rel="stylesheet" href="/css/style.css"/>
+  <script src="/socket.io/socket.io.js" defer></script>
+  <script src="/js/app.js" defer></script>
+</head>
+<body>
+
+  <div id="join-screen">
+    <div class="join-card">
+      <div class="join-logo">🏀</div>
+      <h1>HoopsTalk</h1>
+      <p>Real-time chat for basketball fans</p>
+      <input
+        id="username-input"
+        type="text"
+        placeholder="Enter your name to join..."
+        maxlength="20"
+        autocomplete="off"
+      />
+      <button id="join-btn">Join the Chat</button>
+    </div>
+  </div>
+
+  <div id="chat-screen" class="hidden">
+
+    <header>
+      <div class="header-left">
+        <span class="logo">🏀</span>
+        <span class="app-name">HoopsTalk</span>
+        <span class="room-tag">#general</span>
+      </div>
+      <div class="header-right">
+        <div class="connection-dot" id="conn-dot"></div>
+        <span class="connection-label" id="conn-label">Connected</span>
+        <button class="users-toggle" id="users-toggle">👥 <span id="user-count">0</span></button>
+      </div>
+    </header>
+
+    <div class="chat-body">
+
+      <aside id="sidebar">
+        <h3>Online Now</h3>
+        <ul id="user-list"></ul>
+      </aside>
+
+      <div class="chat-main">
+
+        <div id="messages"></div>
+
+        <div id="typing-bar"></div>
+
+        <div class="input-area">
+          <input
+            id="msg-input"
+            type="text"
+            placeholder="Talk hoops... (Enter to send)"
+            maxlength="500"
+            autocomplete="off"
+            disabled
+          />
+          <button id="send-btn" disabled>Send</button>
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</body>
+</html>
