@@ -11,6 +11,16 @@ let isTyping     = false;
 let lastAuthor   = "";
 
 // ── DOM REFERENCES ───────────────────────────────────────────
+const picksView      = document.getElementById("picks-view");
+const chatView       = document.getElementById("chat-view");
+const picksList      = document.getElementById("picks-list");
+const leaderboardList = document.getElementById("leaderboard-list");
+const pickGameSelect = document.getElementById("pick-game-select");
+const pickTeams      = document.getElementById("pick-teams");
+const pickAwayBtn    = document.getElementById("pick-away-btn");
+const pickHomeBtn    = document.getElementById("pick-home-btn");
+const submitPickBtn  = document.getElementById("submit-pick-btn");
+const pickError      = document.getElementById("pick-error");
 const authScreen    = document.getElementById("auth-screen");
 const chatScreen    = document.getElementById("chat-screen");
 const messagesEl    = document.getElementById("messages");
@@ -221,13 +231,22 @@ function connectSocket() {
 function joinRoom(room) {
   currentRoom = room;
   currentRoomTag.textContent = `#${room.name}`;
-  messagesEl.innerHTML = "";
   lastAuthor = "";
 
-  // Tell server we want this room's history
-  socket.emit("room:join", room.id);
+  // Show picks view for #picks room, chat view for everything else
+  if (room.name === 'picks') {
+    picksView.classList.remove("hidden");
+    chatView.classList.add("hidden");
+    loadPicks();
+    loadLeaderboard();
+    populateGameSelect();
+  } else {
+    picksView.classList.add("hidden");
+    chatView.classList.remove("hidden");
+    messagesEl.innerHTML = "";
+    socket.emit("room:join", room.id);
+  }
 
-  // Update active room in sidebar
   document.querySelectorAll(".room-item").forEach(el => {
     el.classList.toggle("active", parseInt(el.dataset.id) === room.id);
   });
@@ -551,3 +570,266 @@ function startScoreUpdates() {
   setInterval(loadScores,  60000);
   setInterval(loadLeaders, 60000);
 }
+
+// ── PICKS FEATURE ─────────────────────────────────────────────
+
+let selectedTeam    = null;
+let selectedGame    = null;
+let pickFormVisible = false;
+
+function togglePickForm() {
+  pickFormVisible = !pickFormVisible;
+  const form = document.getElementById("pick-form");
+  if (pickFormVisible) {
+    form.classList.remove("hidden");
+  } else {
+    form.classList.add("hidden");
+    resetPickForm();
+  }
+}
+
+function resetPickForm() {
+  selectedTeam = null;
+  selectedGame = null;
+  pickGameSelect.value = "";
+  pickTeams.classList.add("hidden");
+  pickAwayBtn.classList.remove("selected");
+  pickHomeBtn.classList.remove("selected");
+  submitPickBtn.disabled = true;
+  pickError.textContent  = "";
+}
+
+// Populate game dropdown from today's scores
+async function populateGameSelect() {
+  try {
+    const res  = await fetch("/api/scores/today");
+    const data = await res.json();
+
+    pickGameSelect.innerHTML = '<option value="">Select a game...</option>';
+
+    if (!data.games || data.games.length === 0) {
+      pickGameSelect.innerHTML = '<option value="">No games today</option>';
+      return;
+    }
+
+    data.games.forEach(game => {
+      const option = document.createElement("option");
+      option.value = JSON.stringify(game);
+      option.textContent = `${game.away_team.abbr} @ ${game.home_team.abbr} — ${game.status}`;
+      pickGameSelect.appendChild(option);
+    });
+
+  } catch (err) {
+    console.error('Populate games error:', err);
+  }
+}
+
+// When user selects a game show team buttons
+pickGameSelect.addEventListener("change", () => {
+  const val = pickGameSelect.value;
+  if (!val) {
+    pickTeams.classList.add("hidden");
+    selectedGame = null;
+    return;
+  }
+
+  selectedGame = JSON.parse(val);
+  pickAwayBtn.textContent = selectedGame.away_team.name;
+  pickHomeBtn.textContent = selectedGame.home_team.name;
+  pickAwayBtn.classList.remove("selected");
+  pickHomeBtn.classList.remove("selected");
+  selectedTeam = null;
+  submitPickBtn.disabled = true;
+  pickTeams.classList.remove("hidden");
+});
+
+function selectTeam(side) {
+  selectedTeam = side === 'away'
+    ? selectedGame.away_team
+    : selectedGame.home_team;
+
+  pickAwayBtn.classList.toggle("selected", side === 'away');
+  pickHomeBtn.classList.toggle("selected", side === 'home');
+  submitPickBtn.disabled = false;
+}
+
+async function submitPick() {
+  if (!selectedGame || !selectedTeam) return;
+  const token = localStorage.getItem("hoopstalk_token");
+  pickError.textContent = "";
+
+  try {
+    const res = await fetch("/api/picks", {
+      method:  "POST",
+      headers: {
+        "Content-Type":  "application/json",
+        "Authorization": `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        game_id:          selectedGame.id,
+        game_description: `${selectedGame.away_team.abbr} @ ${selectedGame.home_team.abbr}`,
+        picked_team:      selectedTeam.name,
+      })
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      pickError.textContent = data.error;
+      return;
+    }
+
+    togglePickForm();
+    loadPicks();
+
+    // Notify via socket so everyone sees new pick
+    socket.emit("pick:new", { roomId: currentRoom.id });
+
+  } catch (err) {
+    pickError.textContent = "Something went wrong";
+  }
+}
+
+async function loadPicks() {
+  try {
+    const res  = await fetch("/api/picks");
+    const data = await res.json();
+
+    picksList.innerHTML = "";
+
+    if (!data.picks.length) {
+      picksList.innerHTML = `
+        <div class="lb-empty">No picks yet — be the first! 🏀</div>
+      `;
+      return;
+    }
+
+    data.picks.forEach(pick => renderPick(pick));
+
+  } catch (err) {
+    console.error('Load picks error:', err);
+  }
+}
+
+function renderPick(pick) {
+  const isOwner    = pick.author_id === currentUser?.id;
+  const isPending  = pick.result === 'pending';
+
+  const myVote = pick.votes.all.find(v => v.user_id === currentUser?.id);
+
+  const div = document.createElement("div");
+  div.className = `pick-card ${isPending ? '' : pick.result}`;
+  div.innerHTML = `
+    <div class="pick-card-header">
+      <span class="pick-author" style="color:${pick.color}">
+        ${escapeHtml(pick.author)}
+      </span>
+      <span class="pick-result-badge ${pick.result}">
+        ${pick.result === 'pending' ? '⏳ Pending' :
+          pick.result === 'won'     ? '✅ Won' : '❌ Lost'}
+      </span>
+    </div>
+    <div class="pick-game-desc">${escapeHtml(pick.game_description)}</div>
+    <div class="pick-selection">🏀 ${escapeHtml(pick.picked_team)}</div>
+    <div class="pick-vote-row">
+      <button
+        class="vote-btn agree ${myVote?.vote === 'agree' ? 'voted' : ''}"
+        onclick="voteOnPick('${pick.id}', 'agree')">
+        👍 ${pick.votes.agrees}
+      </button>
+      <button
+        class="vote-btn disagree ${myVote?.vote === 'disagree' ? 'voted' : ''}"
+        onclick="voteOnPick('${pick.id}', 'disagree')">
+        👎 ${pick.votes.disagrees}
+      </button>
+    </div>
+    ${isOwner && isPending ? `
+      <div class="mark-result-row">
+        <span style="font-size:.75rem;color:var(--muted)">Mark result:</span>
+        <button class="mark-btn won"  onclick="markResult('${pick.id}', 'won')">✅ Won</button>
+        <button class="mark-btn lost" onclick="markResult('${pick.id}', 'lost')">❌ Lost</button>
+      </div>
+    ` : ''}
+  `;
+
+  picksList.appendChild(div);
+}
+
+async function voteOnPick(pickId, vote) {
+  const token = localStorage.getItem("hoopstalk_token");
+
+  try {
+    await fetch(`/api/picks/${pickId}/vote`, {
+      method:  "POST",
+      headers: {
+        "Content-Type":  "application/json",
+        "Authorization": `Bearer ${token}`
+      },
+      body: JSON.stringify({ vote })
+    });
+
+    loadPicks();
+
+  } catch (err) {
+    console.error('Vote error:', err);
+  }
+}
+
+async function markResult(pickId, result) {
+  const token = localStorage.getItem("hoopstalk_token");
+
+  try {
+    await fetch(`/api/picks/${pickId}/result`, {
+      method:  "POST",
+      headers: {
+        "Content-Type":  "application/json",
+        "Authorization": `Bearer ${token}`
+      },
+      body: JSON.stringify({ result })
+    });
+
+    loadPicks();
+    loadLeaderboard();
+
+  } catch (err) {
+    console.error('Mark result error:', err);
+  }
+}
+
+async function loadLeaderboard() {
+  try {
+    const res  = await fetch("/api/picks/leaderboard");
+    const data = await res.json();
+
+    leaderboardList.innerHTML = "";
+
+    if (!data.leaderboard.length) {
+      leaderboardList.innerHTML = `
+        <div class="lb-empty">No results yet — make some picks! 🏀</div>
+      `;
+      return;
+    }
+
+    data.leaderboard.forEach(user => {
+      const rankClass = user.rank === 1 ? 'gold' :
+                        user.rank === 2 ? 'silver' :
+                        user.rank === 3 ? 'bronze' : '';
+      const div = document.createElement("div");
+      div.className = "leaderboard-row";
+      div.innerHTML = `
+        <span class="lb-rank ${rankClass}">${user.rank}</span>
+        <span class="lb-name" style="color:${user.color}">
+          ${escapeHtml(user.username)}
+        </span>
+        <span class="lb-record">${user.wins}W - ${user.losses}L</span>
+        <span class="lb-winrate">${user.winRate}%</span>
+      `;
+      leaderboardList.appendChild(div);
+    });
+
+  } catch (err) {
+    console.error('Leaderboard error:', err);
+  }
+}
+
+// Listen for new picks from other users via socket
+socket.on = socket.on || (() => {});

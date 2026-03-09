@@ -9,6 +9,7 @@ const supabase = require('./supabase');
 const authRoutes = require('./auth');
 const reactionRoutes = require('./reactions');
 const scoresRoutes = require('./scores');
+const picksRoutes = require('./picks');
 
 const app = express();
 const server = http.createServer(app);
@@ -24,6 +25,7 @@ app.use(express.json());
 app.use('/api/auth', authRoutes);
 app.use('/api/reactions', reactionRoutes);
 app.use('/api/scores', scoresRoutes);
+app.use('/api/picks', picksRoutes);
 
 // Load rooms from database
 async function getRooms() {

@@ -113,9 +113,68 @@
 
       <!-- MAIN CHAT -->
       <div class="chat-main">
-        <div id="messages"></div>
-        <div id="typing-bar"></div>
-        <div class="input-area">
+
+        <!-- PICKS VIEW — shown in #picks room -->
+        <div id="picks-view" class="hidden">
+
+          <!-- MAKE A PICK -->
+          <div class="picks-header">
+            <h2>🏆 Picks & Predictions</h2>
+            <button id="make-pick-btn" onclick="togglePickForm()">+ Make a Pick</button>
+          </div>
+
+          <!-- PICK FORM -->
+          <div id="pick-form" class="hidden">
+            <div class="pick-form-inner">
+              <h3>Make Your Pick</h3>
+              <select id="pick-game-select">
+                <option value="">Select a game...</option>
+              </select>
+              <div id="pick-teams" class="hidden">
+                <p class="pick-label">Who wins?</p>
+                <div class="pick-team-btns">
+                  <button class="pick-team-btn" id="pick-away-btn" onclick="selectTeam('away')"></button>
+                  <span class="pick-vs">VS</span>
+                  <button class="pick-team-btn" id="pick-home-btn" onclick="selectTeam('home')"></button>
+                </div>
+              </div>
+              <div class="pick-form-actions">
+                <button id="submit-pick-btn" onclick="submitPick()" disabled>Submit Pick</button>
+                <button class="cancel-btn" onclick="togglePickForm()">Cancel</button>
+              </div>
+              <div class="pick-error" id="pick-error"></div>
+            </div>
+          </div>
+
+          <!-- LEADERBOARD -->
+          <div class="picks-leaderboard">
+            <h3>🏆 Leaderboard</h3>
+            <div id="leaderboard-list"></div>
+          </div>
+
+          <!-- PICKS LIST -->
+          <div id="picks-list"></div>
+
+        </div>
+
+        <!-- CHAT VIEW — shown in all other rooms -->
+        <div id="chat-view">
+          <div id="messages"></div>
+          <div id="typing-bar"></div>
+          <div class="input-area">
+            <input
+              id="msg-input"
+              type="text"
+              placeholder="Talk hoops... (Enter to send)"
+              maxlength="500"
+              autocomplete="off"
+              disabled
+            />
+            <button id="send-btn" disabled>Send</button>
+          </div>
+        </div>
+
+      </div>
           <input
             id="msg-input"
             type="text"
