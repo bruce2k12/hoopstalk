@@ -25,7 +25,12 @@ async function bdlFetch(endpoint) {
 
 // ── HELPER: get today's date in YYYY-MM-DD ────────────────────
 function today() {
-  return new Date().toISOString().split('T')[0];
+  const now = new Date();
+  const la  = new Date(now.toLocaleString('en-US', { timeZone: 'America/Los_Angeles' }));
+  const y   = la.getFullYear();
+  const m   = String(la.getMonth() + 1).padStart(2, '0');
+  const d   = String(la.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
 }
 
 // ── GET TODAY'S GAMES ─────────────────────────────────────────
