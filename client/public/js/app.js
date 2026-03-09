@@ -499,6 +499,9 @@ window.addEventListener("load", async () => {
 // ── NBA SCORES ────────────────────────────────────────────────
 
 async function loadScores() {
+  const gamesContainer = document.getElementById("games-container");
+  if (!gamesContainer) return;
+  
   try {
     const res  = await fetch("/api/scores/today");
     const data = await res.json();
@@ -566,9 +569,10 @@ async function loadScores() {
 }
 
 async function loadLeaders() {
-  leaderPts.querySelector(".leader-value").textContent = "Soon";
-  leaderAst.querySelector(".leader-value").textContent = "Soon";
-  leaderReb.querySelector(".leader-value").textContent = "Soon";
+  const leaderPts = document.getElementById("leader-pts");
+  const leaderAst = document.getElementById("leader-ast");
+  const leaderReb = document.getElementById("leader-reb");
+  if (!leaderPts) return;
 }
 
 // Load scores when chat opens and refresh every 60 seconds
@@ -838,6 +842,3 @@ async function loadLeaderboard() {
     console.error('Leaderboard error:', err);
   }
 }
-
-// Listen for new picks from other users via socket
-socket.on = socket.on || (() => {});

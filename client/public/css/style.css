@@ -243,6 +243,7 @@ header {
   display: flex;
   flex: 1;
   overflow: hidden;
+  position: relative;
 }
 
 /* ── SIDEBAR ─────────────────────────────────────────────────── */
@@ -256,6 +257,33 @@ aside {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  transition: transform .3s;
+}
+
+@media (max-width: 768px) {
+  aside {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 260px;
+    z-index: 100;
+    transform: translateX(-100%);
+    padding-top: calc(var(--header-h) + 12px);
+  }
+
+  aside.open {
+    transform: translateX(0);
+  }
+
+  .chat-main {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  .chat-body {
+    width: 100%;
+  }
 }
 
 .sidebar-section { margin-bottom: 8px; }
@@ -331,6 +359,14 @@ aside h3 {
 
 /* ── CHAT MAIN ───────────────────────────────────────────────── */
 .chat-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-width: 0;
+}
+
+#chat-view {
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -462,29 +498,26 @@ aside h3 {
 
 /* ── RESPONSIVE MOBILE ───────────────────────────────────────── */
 @media (max-width: 768px) {
-
-  /* Hide sidebar by default on mobile */
   aside {
-    display: none;
     position: fixed;
-    top: var(--header-h);
-    bottom: 0;
+    top: 0;
     left: 0;
-    z-index: 20;
+    bottom: 0;
     width: 260px;
-    box-shadow: 4px 0 20px rgba(0,0,0,.5);
+    z-index: 100;
+    transform: translateX(-100%);
+    transition: transform .3s;
+    padding-top: calc(var(--header-h) + 12px);
   }
 
-  /* Show sidebar when toggled */
   aside.open {
-    display: flex;
+    transform: translateX(0);
   }
 
-  /* Chat takes full width */
   .chat-main {
     width: 100%;
-    min-width: 0;
   }
+}
 
   /* Shrink header for mobile */
   header {
@@ -505,13 +538,14 @@ aside h3 {
 
   /* Scores bar on mobile */
   #scores-bar {
-    height: auto;
-    min-height: 44px;
-    flex-direction: column;
-    padding: 4px 0;
-  }
+  display: flex;
+  height: 48px;
+  min-height: 48px;
+  flex-direction: row;
+  padding: 0;
+}
 
-  #scores-scroll { width: 100%; }
+  #scores-scroll { width: 100%; height: 44px; display: flex; align-items: center; }
 
   #games-container {
     padding: 4px 8px;
@@ -552,7 +586,6 @@ aside h3 {
   }
 
   .pick-vs { display: none; }
-}
 
 /* ── SCORES BAR ──────────────────────────────────────────────── */
 #scores-bar {
@@ -567,9 +600,13 @@ aside h3 {
 
 #scores-scroll {
   flex: 1;
+  min-width: 0;
   overflow-x: auto;
   overflow-y: hidden;
   scrollbar-width: none;
+  height: 48px;
+  display: flex;
+  align-items: center;
 }
 #scores-scroll::-webkit-scrollbar { display: none; }
 
@@ -666,6 +703,7 @@ aside h3 {
   padding: 0 12px;
   height: 100%;
   flex-shrink: 0;
+  width: 220px;
 }
 
 .leader-item {
