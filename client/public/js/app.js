@@ -518,8 +518,18 @@ async function loadScores() {
 
       // Format status text
       let statusText = game.status;
-      if (isLive) statusText = `Q${game.period} ${game.time || ''}`;
-      if (isFinal) statusText = 'Final';
+      if (isLive) {
+        statusText = `Q${game.period} ${game.time || ''}`.trim();
+      } else if (isFinal) {
+        statusText = 'Final';
+      } else if (game.status.includes('T')) {
+        // Clean up raw date format for upcoming games
+        const gameTime = new Date(game.status);
+        statusText = gameTime.toLocaleTimeString([], {
+          hour:   '2-digit',
+          minute: '2-digit'
+        });
+      }
 
       const card = document.createElement("div");
       card.className = `game-card${isLive ? " live" : ""}`;
@@ -538,11 +548,9 @@ async function loadScores() {
         </div>
       `;
 
-      // Click to jump to #nba room
       card.addEventListener("click", () => {
         const nbaRoom = [...document.querySelectorAll(".room-item")]
-          .find(el => el.textContent.trim() === "#nba" || 
-                      el.textContent.includes("nba"));
+          .find(el => el.textContent.includes("nba"));
         if (nbaRoom) nbaRoom.click();
       });
 

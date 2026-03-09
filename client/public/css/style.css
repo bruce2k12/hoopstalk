@@ -460,18 +460,98 @@ aside h3 {
 #send-btn:active   { transform: scale(.96); }
 #send-btn:disabled { opacity: .3; cursor: not-allowed; }
 
-/* ── RESPONSIVE ──────────────────────────────────────────────── */
-@media (max-width: 600px) {
-  aside { display: none; }
-  aside.open {
-    display: flex;
+/* ── RESPONSIVE MOBILE ───────────────────────────────────────── */
+@media (max-width: 768px) {
+
+  /* Hide sidebar by default on mobile */
+  aside {
+    display: none;
     position: fixed;
     top: var(--header-h);
     bottom: 0;
     left: 0;
     z-index: 20;
-    width: var(--sidebar-w);
+    width: 260px;
+    box-shadow: 4px 0 20px rgba(0,0,0,.5);
   }
+
+  /* Show sidebar when toggled */
+  aside.open {
+    display: flex;
+  }
+
+  /* Chat takes full width */
+  .chat-main {
+    width: 100%;
+    min-width: 0;
+  }
+
+  /* Shrink header for mobile */
+  header {
+    padding: 0 12px;
+    gap: 6px;
+  }
+
+  .app-name { font-size: 1.1rem; }
+  .room-tag { display: none; }
+  .connection-label { display: none; }
+
+  .logged-in-user {
+    max-width: 70px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* Scores bar on mobile */
+  #scores-bar {
+    height: auto;
+    min-height: 44px;
+    flex-direction: column;
+    padding: 4px 0;
+  }
+
+  #scores-scroll { width: 100%; }
+
+  #games-container {
+    padding: 4px 8px;
+    height: auto;
+  }
+
+  #stat-leaders {
+    border-left: none;
+    border-top: 1px solid var(--border);
+    width: 100%;
+    justify-content: center;
+    padding: 6px 12px;
+  }
+
+  /* Game cards smaller on mobile */
+  .game-card { padding: 4px 8px; }
+  .game-score { font-size: .75rem; }
+  .game-abbr  { font-size: .65rem; }
+
+  /* Messages full width */
+  #messages {
+    padding: 12px 12px 6px;
+  }
+
+  /* Input bar full width */
+  .input-area {
+    padding: 8px 10px;
+  }
+
+  #msg-input { font-size: .85rem; }
+
+  /* Picks view on mobile */
+  #picks-view { padding: 12px; }
+
+  .pick-team-btns {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .pick-vs { display: none; }
 }
 
 /* ── SCORES BAR ──────────────────────────────────────────────── */
