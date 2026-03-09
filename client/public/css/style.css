@@ -356,6 +356,11 @@ aside h3 {
   color: var(--muted);
   margin-left: auto;
 }
+.user-room-tag {
+  font-size: .65rem;
+  color: var(--accent);
+  margin-left: auto;
+}
 
 /* ── CHAT MAIN ───────────────────────────────────────────────── */
 .chat-main {

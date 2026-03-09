@@ -149,6 +149,12 @@ io.on("connection", (socket) => {
 
   // Load message history for a specific room
   socket.on("room:join", async (room_id) => {
+    // Track which room the user is in
+    if (activeUsers[socket.id]) {
+      activeUsers[socket.id].currentRoom = room_id;
+      io.emit("users:update", Object.values(activeUsers));
+    }
+
     try {
       const { data: messages, error } = await supabase
         .from('messages')

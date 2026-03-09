@@ -302,6 +302,7 @@ function stopTyping() {
 
 // ── RENDER: ROOMS ─────────────────────────────────────────────
 function renderRoomList(rooms) {
+  window.allRooms = rooms;
   roomListEl.innerHTML = "";
   rooms.forEach(room => {
     const li = document.createElement("li");
@@ -427,14 +428,25 @@ function renderSystemMessage(text) {
 
 // ── RENDER: USER LIST ─────────────────────────────────────────
 function renderUserList(users) {
-  userCountEl.textContent = users.length;
   userListEl.innerHTML = "";
+  userCountEl.textContent = users.length;
+
   users.forEach(user => {
+    const isMe = user.username === currentUser?.username;
+
+    // Find room name from currentRoom or rooms list
+    let roomName = "";
+    if (user.currentRoom) {
+      const room = window.allRooms?.find(r => r.id === user.currentRoom);
+      roomName = room ? `#${room.name}` : "";
+    }
+
     const li = document.createElement("li");
     li.innerHTML = `
       <span class="user-dot" style="background:${user.color}"></span>
       <span class="user-name-label">${escapeHtml(user.username)}</span>
-      ${user.username === currentUser?.username ? '<span class="user-you-tag">you</span>' : ""}
+      ${roomName ? `<span class="user-room-tag">${roomName}</span>` : ""}
+      ${isMe ? '<span class="user-you-tag">you</span>' : ""}
     `;
     userListEl.appendChild(li);
   });
