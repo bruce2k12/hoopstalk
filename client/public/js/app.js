@@ -876,3 +876,12 @@ function closeSidebar() {
   sidebar.classList.remove("open");
   overlay.classList.remove("active");
 }
+
+// ── PWA SERVICE WORKER ────────────────────────────────────────
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+      .then(reg => console.log('✅ SW registered:', reg.scope))
+      .catch(err => console.log('❌ SW failed:', err));
+  });
+}
