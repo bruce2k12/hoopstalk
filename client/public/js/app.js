@@ -229,6 +229,7 @@ function connectSocket() {
 
 // ── JOIN A ROOM ───────────────────────────────────────────────
 function joinRoom(room) {
+  closeSidebar(); // close sidebar on mobile when room is selected
   currentRoom = room;
   currentRoomTag.textContent = `#${room.name}`;
   lastAuthor = "";
@@ -841,4 +842,25 @@ async function loadLeaderboard() {
   } catch (err) {
     console.error('Leaderboard error:', err);
   }
+}
+
+// ── MOBILE SIDEBAR TOGGLE ─────────────────────────────────────
+function toggleSidebar() {
+  const sidebar  = document.getElementById("sidebar");
+  const overlay  = document.getElementById("sidebar-overlay");
+  const isOpen   = sidebar.classList.contains("open");
+
+  if (isOpen) {
+    closeSidebar();
+  } else {
+    sidebar.classList.add("open");
+    overlay.classList.add("active");
+  }
+}
+
+function closeSidebar() {
+  const sidebar = document.getElementById("sidebar");
+  const overlay = document.getElementById("sidebar-overlay");
+  sidebar.classList.remove("open");
+  overlay.classList.remove("active");
 }

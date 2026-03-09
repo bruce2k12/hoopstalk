@@ -89,8 +89,12 @@
         <span class="logged-in-user" id="logged-in-user"></span>
         <button class="logout-btn" onclick="handleLogout()">Logout</button>
         <button class="users-toggle" id="users-toggle">👥 <span id="user-count">0</span></button>
+        <button class="menu-btn" id="menu-btn" onclick="toggleSidebar()">☰</button>
       </div>
     </header>
+
+    <!-- MOBILE OVERLAY -->
+    <div id="sidebar-overlay" onclick="closeSidebar()"></div>
 
     <!-- BODY -->
     <div class="chat-body">
